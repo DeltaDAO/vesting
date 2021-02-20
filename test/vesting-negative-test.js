@@ -6,11 +6,11 @@ chai.use(waffle.solidity);
 const { expect, assert } = chai;
 
 describe("vesting - negative", function () {
-  let owner, alice, bob, charlie, token, vesting;
+  let owner, alice, bob, charlie, token, vesting, dave;
   const NULL_ADDRESS = `0x${"0".repeat(40)}`;
 
   beforeEach(async () => {
-    [owner, alice, bob, charlie] = await ethers.getSigners();
+    [owner, alice, bob, charlie, dave] = await ethers.getSigners();
     Contract = await ethers.getContractFactory("MockDeltaToken");
     token = await Contract.deploy("delta", "delta");
     Contract = await ethers.getContractFactory("VestingWallet");
@@ -125,6 +125,114 @@ describe("vesting - negative", function () {
           cliffTime,
           endTime,
           totalAmount.toString()
+        );
+      should.fail("no error was thrown when it should have been");
+    } catch (e) {
+      assert.equal(
+        e.message,
+        "VM Exception while processing transaction: revert Ownable: caller is not the owner"
+      );
+    }
+  });
+
+  it("should test batchRegisterVesting negative tests", async function () {
+    const startTime = blockTime;
+    const cliffTime = blockTime + 500;
+    const endTime = blockTime + 1000;
+    const totalAmount = 1 * 1e18;
+    try {
+      await vesting.batchRegisterVestingSchedule(
+        [charlie.address],
+        [NULL_ADDRESS],
+        [startTime],
+        [cliffTime],
+        [endTime],
+        [totalAmount.toString()]
+      );
+      should.fail("no error was thrown when it should have been");
+    } catch (e) {
+      assert.equal(
+        e.message,
+        "VM Exception while processing transaction: revert addressNotNull"
+      );
+    }
+    try {
+      await vesting.batchRegisterVestingSchedule(
+        [dave.address, bob.address],
+        [owner.address, owner.address],
+        [startTime],
+        [cliffTime],
+        [endTime],
+        [totalAmount.toString()]
+      );
+      should.fail("no error was thrown when it should have been");
+    } catch (e) {
+      assert.equal(
+        e.message,
+        "VM Exception while processing transaction: invalid opcode"
+      );
+    }
+    try {
+      await vesting.batchRegisterVestingSchedule(
+        [alice.address],
+        [owner.address],
+        [startTime],
+        [cliffTime],
+        [endTime],
+        [totalAmount.toString()]
+      );
+      should.fail("no error was thrown when it should have been");
+    } catch (e) {
+      assert.equal(
+        e.message,
+        "VM Exception while processing transaction: revert vestingScheduleNotConfirmed"
+      );
+    }
+
+    try {
+      await vesting.batchRegisterVestingSchedule(
+        [charlie.address],
+        [owner.address],
+        [cliffTime],
+        [startTime],
+        [endTime],
+        [totalAmount.toString()]
+      );
+      should.fail("no error was thrown when it should have been");
+    } catch (e) {
+      assert.equal(
+        e.message,
+        "VM Exception while processing transaction: revert cliff > start"
+      );
+    }
+
+    try {
+      await vesting.batchRegisterVestingSchedule(
+        [charlie.address],
+        [owner.address],
+        [startTime],
+        [endTime],
+        [cliffTime],
+        [totalAmount.toString()]
+      );
+      should.fail("no error was thrown when it should have been");
+    } catch (e) {
+      assert.equal(
+        e.message,
+        "VM Exception while processing transaction: revert end > cliff"
+      );
+    }
+
+    try {
+      await vesting
+        .connect(charlie)
+        .batchRegisterVestingSchedule(
+          [charlie.address],
+          [owner.address],
+          [startTime],
+          [cliffTime],
+          [endTime],
+          [totalAmount.toString()]
         );
       should.fail("no error was thrown when it should have been");
     } catch (e) {

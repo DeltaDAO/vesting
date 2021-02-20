@@ -116,7 +116,97 @@ describe("vesting - positive", function () {
 
     assert.deepEqual(mockData, vestingDataConfirmed, "entries should match");
   });
+  it("should batch registers and confirm vesting schedule", async function () {
+    const latestBlock = await ethers.provider.getBlock("latest");
+    blockTime = latestBlock.timestamp;
 
+    const startTime = blockTime;
+    const cliffTime = blockTime + 500;
+    const endTime = blockTime + 1000;
+    const totalAmount = 1 * 1e18;
+
+    await expect(
+      vesting.batchRegisterVestingSchedule(
+        [owner.address, bob.address, charlie.address],
+        [owner.address, owner.address, owner.address],
+        [startTime, startTime, startTime],
+        [cliffTime, cliffTime, cliffTime],
+        [endTime, endTime, endTime],
+        [totalAmount.toString(), totalAmount.toString(), totalAmount.toString()]
+      )
+    )
+      .to.emit(vesting, "VestingScheduleRegistered")
+      .withArgs(
+        bob.address,
+        owner.address,
+        startTime.toString(),
+        cliffTime.toString(),
+        endTime.toString(),
+        totalAmount.toString()
+      );
+
+    const vestingStruct = await vesting.schedules(bob.address);
+
+    const vestingData = returnVestingSchedule(vestingStruct);
+    const mockData = {
+      startTimeInSec: startTime.toString(),
+      cliffTimeInSec: cliffTime.toString(),
+      endTimeInSec: endTime.toString(),
+      totalAmount: totalAmount.toString(),
+      totalAmountWithdrawn: "0",
+      depositor: owner.address,
+      isConfirmed: false,
+    };
+    assert.deepEqual(mockData, vestingData, "entries should match");
+
+    await expect(
+      vesting
+        .connect(bob)
+        .confirmVestingSchedule(
+          startTime,
+          cliffTime,
+          endTime,
+          totalAmount.toString()
+        )
+    )
+      .to.emit(vesting, "VestingScheduleConfirmed")
+      .withArgs(
+        bob.address,
+        owner.address,
+        startTime.toString(),
+        cliffTime.toString(),
+        endTime.toString(),
+        totalAmount.toString()
+      );
+
+    mockData.isConfirmed = true;
+
+    const vestingStructConfirmed = await vesting.schedules(bob.address);
+
+    const vestingDataConfirmed = returnVestingSchedule(vestingStructConfirmed);
+
+    assert.deepEqual(mockData, vestingDataConfirmed, "entries should match");
+  });
+  it("should batch load test", async function () {
+    const latestBlock = await ethers.provider.getBlock("latest");
+    blockTime = latestBlock.timestamp;
+
+    const startTime = Array(5).fill(blockTime);
+    const cliffTime = Array(5).fill(blockTime + 500);
+    const endTime = Array(5).fill(blockTime + 1000);
+    const totalAmount = Array(5).fill((1 * 1e18).toString());
+    const depositors = Array(5).fill(owner.address)
+    
+    await vesting.batchRegisterVestingSchedule(
+        [owner.address, bob.address, charlie.address, owner.address, token.address],
+        depositors,
+        startTime, 
+        cliffTime, 
+        endTime, 
+        totalAmount
+      )
+  })
+    
   it("registers a withdraw 3/4 the amount after the cliff", async function () {
     ethers.provider.send("evm_increaseTime", [750]);
     ethers.provider.send("evm_mine");
