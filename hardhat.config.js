@@ -17,16 +17,21 @@ task("accounts", "Prints the list of accounts", async () => {
   }
 });
 
-task("deploy", "Deploys new token contract")
+task("deploy", "Deploys new vesting and utils contract")
 .addParam("token", "The Delta token address")
   .setAction(async (args, hre) => {
     // We get the contract to deploy
     const Vesting = await hre.ethers.getContractFactory("VestingWallet");
     const vesting = await Vesting.deploy(args.token);
-
     console.log("Vesting deployed to:", vesting.address);
+
+    const Utils = await hre.ethers.getContractFactory("Utils");
+    const utils = await Utils.deploy(args.token);
+
+    console.log("Utils deployed to:", utils.address);
   });
 
+  
 // You need to export an object to set up your config
 // Go to https://hardhat.org/config/ to learn more
 
