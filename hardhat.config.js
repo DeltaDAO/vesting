@@ -1,6 +1,7 @@
 require("@nomiclabs/hardhat-waffle");
 require("@nomiclabs/hardhat-ethers");
 require("dotenv").config();
+require("hardhat-gas-reporter");
 
 const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID;
 const RINKEBY_PRIVATE_KEY = process.env.RINKEBY_PRIVATE_KEY;
@@ -48,5 +49,9 @@ module.exports = {
     },
   },
   solidity: "0.7.3",
+  gasReporter: {
+    currency: 'USD',
+    gasPrice: 21
+  },
 };
 

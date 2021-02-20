@@ -97,6 +97,21 @@ contract VestingWallet is Ownable {
         vestingToken = DeltaTokenInterface(_vestingToken);
     }
 
+     function batchRegisterVestingSchedule(
+        address[] memory _addressesToRegister,
+        address[] memory _depositors,
+        uint[] memory _startTimesInSec,
+        uint[] memory _cliffTimesInSec,
+        uint[] memory _endTimesInSec,
+        uint[] memory _totalAmounts
+    )
+        public
+    {
+        for (uint256 i = 0; i < _addressesToRegister.length; i++) {
+            registerVestingSchedule(_addressesToRegister[i], _depositors[i], _startTimesInSec[i], _cliffTimesInSec[i], _endTimesInSec[i], _totalAmounts[i]);
+        }
+    }
+
     /// @dev Registers a vesting schedule to an address.
     /// @param _addressToRegister The address that is allowed to withdraw vested tokens for this schedule.
     /// @param _depositor Address that will be depositing vesting token.
